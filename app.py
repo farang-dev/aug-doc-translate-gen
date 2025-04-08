@@ -3,17 +3,45 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 import re
-# Handle different versions of Pinecone library
-try:
-    # For newer versions of Pinecone
-    from pinecone import Pinecone
-    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    pinecone_index = pc.Index(os.getenv("PINECONE_INDEX"))
-except ImportError:
-    # For older versions of Pinecone
+# Import pinecone in a way that works with both v1 and v2
+import importlib.util
+import sys
+
+# Define a function to initialize Pinecone based on the available version
+def initialize_pinecone():
+    # Check if pinecone is installed
+    if importlib.util.find_spec("pinecone") is None:
+        raise ImportError("Pinecone package is not installed")
+
+    # Import the package
     import pinecone
-    pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
-    pinecone_index = pinecone.Index(os.getenv("PINECONE_INDEX"))
+
+    # Check if it's the new version (v2) with Pinecone class
+    if hasattr(pinecone, "Pinecone"):
+        # It's v2
+        pc = pinecone.Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+        index = pc.Index(os.getenv("PINECONE_INDEX"))
+        return index
+    else:
+        # It's v1
+        pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
+        index = pinecone.Index(os.getenv("PINECONE_INDEX"))
+        return index
+
+# Initialize Pinecone
+try:
+    pinecone_index = initialize_pinecone()
+except Exception as e:
+    print(f"Error initializing Pinecone: {str(e)}")
+    # Create a dummy index for development without Pinecone
+    class DummyIndex:
+        def query(self, *args, **kwargs):
+            class DummyResponse:
+                matches = []
+            return DummyResponse()
+        def upsert(self, *args, **kwargs):
+            pass
+    pinecone_index = DummyIndex()
 import openai
 import uuid
 from datetime import datetime
