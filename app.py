@@ -65,9 +65,13 @@ openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Function to extract token from URL
 def extract_token_from_url(url):
-    match = re.search(r'access_token=([^&]+)', url)
+    # This regex will match access_token in both fragment (#) and query parameter (?) formats
+    match = re.search(r'[#?&]access_token=([^&]+)', url)
     if match:
         return match.group(1)
+
+    # Log the URL format for debugging (without exposing the actual token)
+    print(f"URL format: {url[:url.find('=')+1]}...")
     return None
 
 # Function to ensure proper encoding of Japanese text
@@ -108,10 +112,22 @@ def main():
 
         # Try to restore user session from cookies or local storage
         try:
-            # Check if there's a valid session in Supabase
-            session = supabase.auth.get_session()
-            if session and hasattr(session, 'user'):
-                st.session_state.user = session.user
+            # Check for auth redirect in URL query parameters
+            query_params = st.experimental_get_query_params()
+            if "access_token" in query_params:
+                token = query_params["access_token"][0]
+                try:
+                    user = supabase.auth.get_user(token)
+                    st.session_state.user = user.user
+                    # Clear query params to avoid reprocessing
+                    st.experimental_set_query_params()
+                except Exception as e:
+                    st.error(f"Authentication error from redirect: {str(e)}")
+            else:
+                # Check if there's a valid session in Supabase
+                session = supabase.auth.get_session()
+                if session and hasattr(session, 'user'):
+                    st.session_state.user = session.user
 
                 # Also try to load user documents from local storage
                 try:
