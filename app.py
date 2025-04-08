@@ -113,14 +113,13 @@ def main():
         # Try to restore user session from cookies or local storage
         try:
             # Check for auth redirect in URL query parameters
-            query_params = st.experimental_get_query_params()
-            if "access_token" in query_params:
-                token = query_params["access_token"][0]
+            if "access_token" in st.query_params:
+                token = st.query_params["access_token"]
                 try:
                     user = supabase.auth.get_user(token)
                     st.session_state.user = user.user
                     # Clear query params to avoid reprocessing
-                    st.experimental_set_query_params()
+                    st.query_params.clear()
                 except Exception as e:
                     st.error(f"Authentication error from redirect: {str(e)}")
             else:
