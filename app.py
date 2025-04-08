@@ -3,7 +3,17 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 import re
-from pinecone import Pinecone
+# Handle different versions of Pinecone library
+try:
+    # For newer versions of Pinecone
+    from pinecone import Pinecone
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    pinecone_index = pc.Index(os.getenv("PINECONE_INDEX"))
+except ImportError:
+    # For older versions of Pinecone
+    import pinecone
+    pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
+    pinecone_index = pinecone.Index(os.getenv("PINECONE_INDEX"))
 import openai
 import uuid
 from datetime import datetime
@@ -20,10 +30,7 @@ load_dotenv()
 # Initialize clients
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 
-# Initialize Pinecone
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index_name = os.getenv("PINECONE_INDEX")
-pinecone_index = pc.Index(index_name)
+# Pinecone is already initialized above
 
 # Initialize OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
