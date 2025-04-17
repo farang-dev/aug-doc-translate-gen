@@ -481,7 +481,7 @@ def generate_thread_title(first_message):
 
         # Generate a title using the same model as for translations
         response = client.chat.completions.create(
-            model="deepseek/deepseek-v3-base:free",
+            model="arliai/qwq-32b-arliai-rpr-v1:free",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that generates short, descriptive titles (3-5 words) for conversations based on the first message. The title should be concise and reflect the main topic or intent of the message."},
                 {"role": "user", "content": f"Generate a short title (3-5 words) for a conversation that starts with this message: '{first_message}'. Return ONLY the title, nothing else."}
@@ -724,7 +724,7 @@ def translate_with_rag(text, source_lang, target_lang):
 
             # Use a lower temperature for more consistent results with Japanese
             response = client.chat.completions.create(
-                model="google/gemini-2.5-pro-exp-03-25:free",
+                model="arliai/qwq-32b-arliai-rpr-v1:free",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
